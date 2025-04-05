@@ -12,7 +12,7 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !proce
   throw new Error('Missing required environment variables');
 }
 
-console.log(process.env.GOOGLE_REDIRECT_URI)
+//console.log(process.env.GOOGLE_REDIRECT_URI)
 
 // Create OAuth2 client
 const oauth2Client = new google.auth.OAuth2(
@@ -58,7 +58,6 @@ server.tool(
     try {
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
-      
       return {
         content: [{
           type: "text",
@@ -69,10 +68,60 @@ server.tool(
       return {
         content: [{
           type: "text",
-          text: `Error setting authentication: ${error?.message || 'Unknown error'}`
+          text: `Error setting authentication: ${error?.message}`
         }]
       };
     }
+  }
+);
+
+// Tool to create calendar event
+server.tool(
+  "create-event",
+  "Create a Google Calendar event",
+  {
+    title: z.string().describe("Title of the event"),
+    time: z.string().describe("Time of the event (e.g., '3pm tomorrow', '2024-04-05 15:00')")
+  },
+  async ({ title, time }) => {
+    const eventTime = new Date();
+    if (time.toLowerCase().includes('tomorrow')) {
+      eventTime.setDate(eventTime.getDate() + 1);
+      const timeMatch = time.match(/(\d+)(?::\d+)?\s*(am|pm)?/i);
+      if (timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        if (timeMatch[2]?.toLowerCase() === 'pm') hours += 12;
+        eventTime.setHours(hours, 0, 0, 0);
+      }
+    } else {
+      eventTime.setTime(Date.parse(time));
+    }
+
+    const endTime = new Date(eventTime);
+    endTime.setHours(endTime.getHours() + 1);
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    const response = await calendar.events.insert({
+      calendarId: 'primary',
+      requestBody: {
+        summary: title,
+        start: {
+          dateTime: eventTime.toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        end: {
+          dateTime: endTime.toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      },
+    });
+
+    return {
+      content: [{
+        type: "text",
+        text: `Event created: ${response.data.htmlLink}`
+      }]
+    };
   }
 );
 
