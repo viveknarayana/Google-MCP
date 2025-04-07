@@ -125,6 +125,64 @@ server.tool(
   }
 );
 
+// Tool to list calendar events for the week
+server.tool(
+  "list-events",
+  "List Google Calendar events for the current week",
+  {},
+  async () => {
+    try {
+      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(now);
+      endOfWeek.setDate(now.getDate() + 7);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const response = await calendar.events.list({
+        calendarId: 'primary',
+        timeMin: startOfWeek.toISOString(),
+        timeMax: endOfWeek.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime'
+      });
+
+      const events = response.data.items;
+      if (!events) {
+        return {
+          content: [{
+            type: "text",
+            text: "No events found for the week."
+          }]
+        };
+      }
+
+      const eventList = events.map(event => {
+        const start = event.start?.dateTime || event.start?.date;
+        const formattedDate = new Date(start!).toLocaleString();
+        return `${event.summary} - ${formattedDate}`;
+      }).join('\n');
+
+      return {
+        content: [{
+          type: "text",
+          text: `Events for the week:\n${eventList}`
+        }]
+      };
+    } catch (error: any) {
+      return {
+        content: [{
+          type: "text",
+          text: `Error fetching events: ${error?.message}`
+        }]
+      };
+    }
+  }
+);
+
 // Start the server
 const transport = new StdioServerTransport();
 await server.connect(transport);
