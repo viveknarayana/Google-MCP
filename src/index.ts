@@ -151,7 +151,7 @@ server.tool(
       });
 
       const events = response.data.items;
-      if (!events) {
+      if (!events || events.length === 0) {
         return {
           content: [{
             type: "text",
