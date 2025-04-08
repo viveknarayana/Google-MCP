@@ -58,20 +58,7 @@ server.tool("create-event", "Create a Google Calendar event", {
     title: z.string().describe("Title of the event"),
     time: z.string().describe("Time of the event (e.g., '3pm tomorrow', '2024-04-05 15:00')")
 }, async ({ title, time }) => {
-    const eventTime = new Date();
-    if (time.toLowerCase().includes('tomorrow')) {
-        eventTime.setDate(eventTime.getDate() + 1);
-        const timeMatch = time.match(/(\d+)(?::\d+)?\s*(am|pm)?/i);
-        if (timeMatch) {
-            let hours = parseInt(timeMatch[1]);
-            if (timeMatch[2]?.toLowerCase() === 'pm')
-                hours += 12;
-            eventTime.setHours(hours, 0, 0, 0);
-        }
-    }
-    else {
-        eventTime.setTime(Date.parse(time));
-    }
+    const eventTime = new Date(Date.parse(time));
     const endTime = new Date(eventTime);
     endTime.setHours(endTime.getHours() + 1);
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
@@ -95,6 +82,79 @@ server.tool("create-event", "Create a Google Calendar event", {
                 text: `Event created: ${response.data.htmlLink}`
             }]
     };
+});
+// Tool to list calendar events for the week
+server.tool("list-events", "List Google Calendar events for the current week", {}, async () => {
+    try {
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(now);
+        endOfWeek.setDate(now.getDate() + 7);
+        endOfWeek.setHours(23, 59, 59, 999);
+        const response = await calendar.events.list({
+            calendarId: 'primary',
+            timeMin: startOfWeek.toISOString(),
+            timeMax: endOfWeek.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime'
+        });
+        const events = response.data.items;
+        if (!events || events.length === 0) {
+            return {
+                content: [{
+                        type: "text",
+                        text: "No events found for the week."
+                    }]
+            };
+        }
+        const eventList = events.map(event => {
+            const start = event.start?.dateTime || event.start?.date;
+            const formattedDate = new Date(start).toLocaleString();
+            return `${event.summary} - ${formattedDate} (ID: ${event.id})`;
+        }).join('\n');
+        return {
+            content: [{
+                    type: "text",
+                    text: `Events for the week:\n${eventList}`
+                }]
+        };
+    }
+    catch (error) {
+        return {
+            content: [{
+                    type: "text",
+                    text: `Error fetching events: ${error?.message}`
+                }]
+        };
+    }
+});
+// Tool to delete calendar event
+server.tool("delete-event", "Delete a Google Calendar event", {
+    eventId: z.string().describe("The ID of the event to delete")
+}, async ({ eventId }) => {
+    try {
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        await calendar.events.delete({
+            calendarId: 'primary',
+            eventId: eventId
+        });
+        return {
+            content: [{
+                    type: "text",
+                    text: `Event successfully deleted`
+                }]
+        };
+    }
+    catch (error) {
+        return {
+            content: [{
+                    type: "text",
+                    text: `Error deleting event: ${error?.message}`
+                }]
+        };
+    }
 });
 // Start the server
 const transport = new StdioServerTransport();
