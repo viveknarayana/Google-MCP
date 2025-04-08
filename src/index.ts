@@ -84,19 +84,7 @@ server.tool(
     time: z.string().describe("Time of the event (e.g., '3pm tomorrow', '2024-04-05 15:00')")
   },
   async ({ title, time }) => {
-    const eventTime = new Date();
-    if (time.toLowerCase().includes('tomorrow')) {
-      eventTime.setDate(eventTime.getDate() + 1);
-      const timeMatch = time.match(/(\d+)(?::\d+)?\s*(am|pm)?/i);
-      if (timeMatch) {
-        let hours = parseInt(timeMatch[1]);
-        if (timeMatch[2]?.toLowerCase() === 'pm') hours += 12;
-        eventTime.setHours(hours, 0, 0, 0);
-      }
-    } else {
-      eventTime.setTime(Date.parse(time));
-    }
-
+    const eventTime = new Date(Date.parse(time));
     const endTime = new Date(eventTime);
     endTime.setHours(endTime.getHours() + 1);
 
@@ -163,7 +151,7 @@ server.tool(
       const eventList = events.map(event => {
         const start = event.start?.dateTime || event.start?.date;
         const formattedDate = new Date(start!).toLocaleString();
-        return `${event.summary} - ${formattedDate}`;
+        return `${event.summary} - ${formattedDate} (ID: ${event.id})`;
       }).join('\n');
 
       return {
@@ -177,6 +165,38 @@ server.tool(
         content: [{
           type: "text",
           text: `Error fetching events: ${error?.message}`
+        }]
+      };
+    }
+  }
+);
+
+// Tool to delete calendar event
+server.tool(
+  "delete-event",
+  "Delete a Google Calendar event",
+  {
+    eventId: z.string().describe("The ID of the event to delete")
+  },
+  async ({ eventId }) => {
+    try {
+      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      await calendar.events.delete({
+        calendarId: 'primary',
+        eventId: eventId
+      });
+
+      return {
+        content: [{
+          type: "text",
+          text: `Event successfully deleted`
+        }]
+      };
+    } catch (error: any) {
+      return {
+        content: [{
+          type: "text",
+          text: `Error deleting event: ${error?.message}`
         }]
       };
     }
