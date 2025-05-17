@@ -41,22 +41,26 @@ A Model Context Protocol (MCP) integration for Google Calendar.
 1. **Create Event**
    - Creates a new calendar event
    - Supports natural language time inputs
-   // Example: "Create an event for tomorrow at 2 PM"
-    
+   ```
+   "Create an event for tomorrow at 2 PM"
+   ``` 
 
 2. **List Events**
    - Shows all events for the next 7 days
    - Includes event IDs for management
-   // Example: "Show my events for the week"
-
+   ```
+   "Show my events for the week"
+  ```
 3. **Delete Event**
    - Removes an event using its ID
-   // Example: "Delete the meeting tomorrow"
-
+```
+"Delete the meeting tomorrow"
+```
 4. **Reschedule Event**
    - Combines delete and create to move events
-   // Example: "Move my 2 PM meeting to 4 PM"
-
+```
+ "Move my 2 PM meeting to 4 PM"
+```
 ## Dependencies
 
 - @modelcontextprotocol/sdk
