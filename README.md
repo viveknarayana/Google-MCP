@@ -53,14 +53,14 @@ A Model Context Protocol (MCP) integration for Google Calendar.
    ```
 3. **Delete Event**
    - Removes an event using its ID
-```
-"Delete the meeting tomorrow"
-```
+  ```
+  "Delete the meeting tomorrow"
+  ```
 4. **Reschedule Event**
    - Combines delete and create to move events
-```
- "Move my 2 PM meeting to 4 PM"
-```
+  ```
+   "Move my 2 PM meeting to 4 PM"
+  ```
 ## Dependencies
 
 - @modelcontextprotocol/sdk
