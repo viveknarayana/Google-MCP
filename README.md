@@ -42,7 +42,7 @@ A Model Context Protocol (MCP) integration for Google Calendar.
    - Creates a new calendar event
    - Supports natural language time inputs
    // Example: "Create an event for tomorrow at 2 PM"
-   ```
+    
 
 2. **List Events**
    - Shows all events for the next 7 days
