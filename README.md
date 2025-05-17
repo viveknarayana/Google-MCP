@@ -50,7 +50,7 @@ A Model Context Protocol (MCP) integration for Google Calendar.
    - Includes event IDs for management
    ```
    "Show my events for the week"
-  ```
+   ```
 3. **Delete Event**
    - Removes an event using its ID
 ```
